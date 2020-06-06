@@ -1,6 +1,7 @@
 // я съел деда
 // попытка 2
 // помогите
+// эта фигня не хочет менять 8 табов на 4
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
