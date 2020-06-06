@@ -1,5 +1,6 @@
 // я съел деда
 // попытка 2
+// помогите
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
