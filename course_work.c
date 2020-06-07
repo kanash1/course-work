@@ -3,6 +3,8 @@
 #include <conio.h>
 
 #define ERROR_CHECK errorCheck(error, &head, &param, &oth, &fname);
+#define DEF_READ_FILE "input.txt"
+#define DEF_WRITE_FILE "output.txt"
 
 /*===========================================================================*/
 /*                                STRUCTURES                                 */
@@ -41,6 +43,7 @@ char changeMenu();								// print change menu items
 char printMenu();								// print output modify menu items
 char sortMenu();								// print sort menu items
 char filtMenu();								// print filter menu items
+char fileMenu();								// print file menu items
 char getChoice();								// input choice
 
 /*------------------------functions for forming list-------------------------*/
@@ -108,16 +111,16 @@ void strCopy(char*,char*,int);					// copy string
 
 void freeGame(GN**);							// remove game
 void freeHead(GH**);							// remove list
-void delAll(GH**,GH**,GH**);					// delete all data
+void delAll(GH**,GH**,GH**,char**);				// delete all data
 void errorCheck(int,GH**,GH**,GH**,char**);		// delete all data and emergency exit
 
-/*----------------------functions for work with strings----------------------*/
+/*------------------------functions for work with file-----------------------*/
 
 char* fileName();								// enter file name
 int parser(char*,int);							// parsing file name
 GH* readFile(char*,int*);						// read file
 void saveFile(GH*,char*);						// save file
-int needSave(GH*,int*);							// choice save or not
+void needSave(GH*,int*);							// choice save or not
 
 /*---------------------------------messages----------------------------------*/
 
@@ -152,8 +155,8 @@ int main()
 	lvl3,						// user choice in the 3 level menu
 	lvl4,						// user choice in the 4 level menu
 	*fname,						// file name
-	ffield[7],					// game fields that need to be changed
-	cfield[7];					// game fields to be filtered
+	ffield[7],					// game fields to be filtered
+	cfield[7];					// game fields that need to be changed
 
 	int
 	(*cmp[5])(GN*, GN*),		// array of pointers to function call points
@@ -164,10 +167,11 @@ int main()
 	sfield,						// game field to be sorted
 	sdir;						// sorting direction
 
-    
+
     // assignment of initial values
 	ffield[0] = '\0';
 	cfield[0] = '\0';
+	fname = NULL;
 
 	_filt = 0;
 	flag = 0;
@@ -188,7 +192,7 @@ int main()
 	// conclusion greeting
 	printf("Welcome to GAME DATABASE");
 	pause();
-	
+
 	do
 	{
 		lvl1 = mainMenu();	// main menu
@@ -206,7 +210,7 @@ int main()
 									{
 										if(!flag)
 										{
-											flag = needSave(head, &error);
+											needSave(head, &error);
 											ERROR_CHECK
 										}
 										freeHead(&head);
@@ -360,50 +364,6 @@ int main()
 													else
 														emptyMes();
 													break;
-											case '4':	// output file-cabinet
-													if (head) {
-														do
-														{
-															lvl4 = outputMenu();	// output menu
-															system("cls");
-															switch(lvl4)
-															{
-																case '1':	// output file-cabinet size
-																		printf("Game in file-cabinet: %d", getSize(head));
-																		pause();
-																		break;
-																case '2':	// output selected game
-																		pos = getPos(head);
-																		gamePrint(head, pos);
-																		break;
-																case '3':	// output all file-cabinet
-																		listPrint(head);
-																		break;
-																case '4':	// save file-cabinet in file
-																		fname = fileName(&error);
-																		ERROR_CHECK
-																		if(fname)
-					                                                    {
-																			saveFile(head, fname);
-																			if(head)
-																				flag = 1;
-																			free(fname);
-																			fname = NULL;
-																		}
-																		break;
-																case '0':	// back
-																		break;
-																case '\n':
-																		break;
-																default:
-																		incMes();
-															}
-														}
-														while(lvl4 != '0');
-													}
-													else
-														emptyMes();
-													break;
 											case '0':	// back
 													break;
 											case '\n':
@@ -419,27 +379,53 @@ int main()
 									{
 										if(!flag)
 										{
-											flag = needSave(head, &error);
-											ERROR_CHECK
-											if(!flag) freeHead(&head);
+											needSave(head, &error);
 											ERROR_CHECK
 										}
+										freeHead(&head);
 									}
-									fname = fileName(&error);
-									ERROR_CHECK
-									if(fname)
-                                    {
-										head = readFile(fname, &error);
-										ERROR_CHECK
-										if(head)
+									do
+									{
+										lvl3 = fileMenu();
+										system("cls");
+										switch(lvl3)
 										{
-											system("cls");
-								        	succMes();
-											flag = 1;
+											case '1':
+													head = readFile(DEF_READ_FILE, &error);
+													ERROR_CHECK
+													if(head)
+													{
+														system("cls");
+											        	succMes();
+														flag = 1;
+													}
+													break;
+											case '2':
+													fname = fileName(&error);
+													ERROR_CHECK
+													if(fname)
+				                                    {
+														head = readFile(fname, &error);
+														ERROR_CHECK
+														if(head)
+														{
+															system("cls");
+												        	succMes();
+															flag = 1;
+														}
+														free(fname);
+														fname = NULL;
+													}
+													break;
+											case '0':	// back
+													break;
+											case '\n':
+													break;
+											default:
+													incMes();
 										}
-										free(fname);
-										fname = NULL;
 									}
+									while(lvl3 != '0');
 									break;
 							case '0':	// back
 									break;
@@ -479,17 +465,38 @@ int main()
 														listPrint(head);
 														break;
 												case '4':	// save file-cabinet in file
-														fname = fileName(&error);
-														ERROR_CHECK
-														if(fname)
-						                                {
-															saveFile(head, fname);
-															if(head)
-																flag = 1;
-															free(fname);
-															fname = NULL;
+														do
+														{
+															lvl4 = fileMenu();
+															system("cls");
+															switch(lvl4)
+															{
+																case '1':
+																		saveFile(head, DEF_WRITE_FILE);
+																		if(head)
+																			flag = 1;
+																		break;
+																case '2':
+																		fname = fileName(&error);
+																		ERROR_CHECK
+																		if(fname)
+										                                {
+																			saveFile(head, fname);
+																			if(head)
+																				flag = 1;
+																			free(fname);
+																			fname = NULL;
+																		}
+																		break;
+																case '0':	// back
+																		break;
+																case '\n':
+																		break;
+																default:
+																	incMes();
+															}
 														}
-														break;
+														while(lvl4 != '0');
 												case '0':	// back
 														break;
 												case '\n':
@@ -504,22 +511,48 @@ int main()
 										emptyMes();
 									break;
 							case '2':	// output file-cabinet from file
-									system("cls");
-									fname = fileName(&error);
-									ERROR_CHECK
-									if(fname)
-                                    {
-										oth = readFile(fname, &error);
-										ERROR_CHECK
-										if(oth)
+									do
+									{
+										lvl3 = fileMenu();
+										system("cls");
+										switch(lvl3)
 										{
-											listPrint(oth);
-											freeHead(&oth);
+											case '1':
+													oth = readFile(DEF_READ_FILE, &error);
+													ERROR_CHECK
+													if(oth)
+													{
+														listPrint(oth);
+														freeHead(&oth);
+													}
+													oth = NULL;
+													break;
+											case '2':
+													fname = fileName(&error);
+													ERROR_CHECK
+													if(fname)
+				                                    {
+														oth = readFile(fname, &error);
+														ERROR_CHECK
+														if(oth)
+														{
+															listPrint(oth);
+															freeHead(&oth);
+														}
+														free(fname);
+														oth = NULL;
+														fname = NULL;
+													}
+													break;
+											case '0':	// back
+													break;
+											case '\n':
+													break;
+											default:
+													incMes();
 										}
-										free(fname);
-										oth = NULL;
-										fname = NULL;
 									}
+									while(lvl3 != '0');
 									break;
 							case '0':	// back
 									break;
@@ -676,50 +709,6 @@ int main()
 																		{
 																			printf("First, specify the fields you want to change.");
 																			pause();
-																		}
-																		break;
-																case '0':	// back
-																		break;
-																case '\n':
-																		break;
-																default:
-																		incMes();
-															}
-														}
-														while(lvl4 != '0');
-													}
-													else
-														emptyMes();
-													break;
-											case '4':	// output file-cabinet
-													if (head) {
-														do
-														{
-															lvl4 = outputMenu();	// output menu
-															system("cls");
-															switch(lvl4)
-															{
-																case '1':	// output file-cabinet size
-																		printf("Game in file-cabinet: %d", getSize(head));
-																		pause();
-																		break;
-																case '2':	// output selected game
-																		pos = getPos(head);
-																		gamePrint(head, pos);
-																		break;
-																case '3':	// output all file-cabinet
-																		listPrint(head);
-																		break;
-																case '4':	// save file-cabinet in file
-																		fname = fileName(&error);
-																		ERROR_CHECK
-																		if(fname)
-					                                                    {
-																			saveFile(head, fname);
-																			if(head)
-																				flag = 1;
-																			free(fname);
-																			fname = NULL;
 																		}
 																		break;
 																case '0':	// back
@@ -957,13 +946,11 @@ int main()
 					{
 						if(!flag)
 						{
-							flag = needSave(head, &error);
-							ERROR_CHECK
-							if(!flag) freeHead(&head);
+							needSave(head, &error);
 							ERROR_CHECK
 						}
 					}
-					delAll(&head, &param, &oth);
+					delAll(&head, &param, &oth, &fname);
 					system("cls");
 					printf("Thanks for using the program!");
 					pause();
@@ -985,9 +972,13 @@ int main()
 
 /*-------------------------------menu fuctions-------------------------------*/
 
+/*
+ * [mainMenu print main menu items]
+ * @return [user choice]
+ */
 char mainMenu()
 {
-	char choice;
+	char choice;	// user choice
 	system("cls");
 	printf("         MENU\n\n"
 		   "1 - Enter file-cabinet\n\n"
@@ -1000,9 +991,13 @@ char mainMenu()
 	return choice;
 }
 
+/*
+ * [enterMenuprint enter menu items]
+ * @return [user choice]
+ */
 char enterMenu()
 {
-	char choice;
+	char choice;	// user choice
 	system("cls");
 	printf("       ENTER MENU\n\n"
 		   "1 - Create new file-cabinet\n\n"
@@ -1013,9 +1008,13 @@ char enterMenu()
 	return choice;
 }
 
+/*
+ * [printMenu print output modify menu items]
+ * @return [user choice]
+ */
 char printMenu()
 {
-	char choice;
+	char choice;	// user choice
 	system("cls");
 	printf("     OUTPUT TYPE MENU\n\n"
 		   "1 - Output current file-cabinet\n\n"
@@ -1026,24 +1025,31 @@ char printMenu()
 	return choice;
 }
 
+/*
+ * [creamodMenu print create/modify menu items]
+ * @return [user choice]
+ */
 char creamodMenu()
 {
-	char choice;
+	char choice;	// user choice
 	system("cls");
 	printf("     CREATE/MODIFY MENU\n\n"
 		   "1 - Add game to file-cabinet\n\n"
 		   "2 - Remove game from file-cabinet\n\n"
 		   "3 - Change file-cabinet game field\n\n"
-		   "4 - Data output\n\n"
 		   "0 - Return to the menu\n\n\n"
 		   "Input: ");
 	choice = getChoice();
 	return choice;
 }
 
+/*
+ * [addMenu print add menu items]
+ * @return [user choice]
+ */
 char addMenu()
 {
-	char choice;
+	char choice;	// user choice
 	system("cls");
 	printf("                ADD MENU\n\n"
 		   "1 - Add to the top of the file-cabinet\n\n"
@@ -1056,9 +1062,13 @@ char addMenu()
 	return choice;
 }
 
+/*
+ * [remMenu print remove menu items]
+ * @return [user choice]
+ */
 char remMenu()
 {
-	char choice;
+	char choice;	// user choice
 	system("cls");
 	printf("              REMOVE MENU\n\n"
 		   "1 - Remove from the top of the file-cabinet\n\n"
@@ -1072,9 +1082,13 @@ char remMenu()
 	return choice;
 }
 
+/*
+ * [changeMenu print change menu items]
+ * @return [user choice]
+ */
 char changeMenu()
 {
-	char choice;
+	char choice;	// user choice
 	system("cls");
 	printf("        CHANGE MENU\n\n"
 		   "1 - Choose fields for change\n\n"
@@ -1085,11 +1099,13 @@ char changeMenu()
 	return choice;
 }
 
-
-
+/*
+ * [outputMenu print output menu items]
+ * @return [user choice]
+ */
 char outputMenu()
 {
-	char choice;
+	char choice;	// user choice
 	system("cls");
 	printf("          OUTPUT MENU\n\n"
 		   "1 - Output size of file-cabinet\n\n"
@@ -1102,9 +1118,13 @@ char outputMenu()
 	return choice;
 }
 
+/*
+ * [processMenu print processing menu items]
+ * @return [user choice]
+ */
 char processMenu()
 {
-	char choice;
+	char choice;	// user choice
 	system("cls");
 	printf("    PROCESSING MENU\n\n"
 		   "1 - Modify file-cabinet\n\n"
@@ -1116,9 +1136,13 @@ char processMenu()
 	return choice;
 }
 
+/*
+ * [sortMenu print sort menu items]
+ * @return [user choice]
+ */
 char sortMenu()
 {
-	char choice;
+	char choice;	// user choice
 	system("cls");
 	printf("          SORT MENU\n\n"
 		   "1 - Select a field to sort\n\n"
@@ -1133,9 +1157,13 @@ char sortMenu()
 	return choice;
 }
 
+/*
+ * [filtMenu print filter items]
+ * @return [user choice]
+ */
 char filtMenu()
 {
-	char choice;
+	char choice;	// user choice
 	system("cls");
 	printf("          FILTER MENU\n\n"
 		   "1 - Select a fields to filter\n\n"
@@ -1150,17 +1178,34 @@ char filtMenu()
 }
 
 /*
- * [getChoice input]
- * @return [choice]
+ * [fileMenu print file name menu items]
+ * @return [description]
+ */
+char fileMenu()
+{
+	char choice;	// user choice
+	system("cls");
+	printf("       FILE MENU\n\n"
+		   "1 - Use default file\n\n"
+		   "2 - Your own file\n\n"
+		   "0 - Return to the menu\n\n\n"
+		   "Input: ");
+	choice = getChoice();
+	return choice;
+}
+
+/*
+ * [getChoice input choice]
+ * @return [user choice]
  */
 char getChoice()
 {
-	char choice[3];	//user's choice
+	char choice[3];	// user choice
 
 	fgets(choice, 3, stdin);
 	fflush(stdin);
 
-	//input validation
+	// input validation
 	if(choice[0] != '\n')
 	    if(choice[1] != '\n')
 	        choice[0] = '\0';
@@ -1168,10 +1213,12 @@ char getChoice()
 	return choice[0];
 }
 
+/*------------------------functions for forming list-------------------------*/
+
 /*
  * [makeHead head list creation]
- * @param  all_head [pointers to all available lists]
- * @return          [head of a new list]
+ * @param  error [pointer to error marker]
+ * @return       [description]
  */
 GH* makeHead(int *error)
 {
@@ -1311,8 +1358,8 @@ void remLast(GH** head)
 void remAfter(GH** head, int pos)
 {
 	GN
-	*game,
-	*tmp;	// temporary 2 pointer to the game
+	*game,	// removed game
+	*tmp;	// temporary pointer to the game
 	int i;	// loop parametr
 	if(pos == getSize((*head)))
 		remLast(head);
@@ -1335,8 +1382,8 @@ void remAfter(GH** head, int pos)
 void remBefore(GH** head, int pos)
 {
 	GN
-	*game,	// temporary 1 pointer to the game
-	*tmp;	// temporary 2 pointer to the game
+	*game,	// removed game
+	*tmp;	// temporary pointer to the game
 	int i;	// loop parametr
 	if(pos == 1)
 		remFirst(head);
@@ -1352,9 +1399,58 @@ void remBefore(GH** head, int pos)
 }
 
 /*
- * [makeNode element (game) of list creation]
- * @param  all_head [pointers to all available lists]
- * @return          [element (game) of list creation]
+ * [addRemCon choose position helper]
+ * @param  head  [head list]
+ * @param  size  [head size]
+ * @param  mode1 [first function mode]
+ * @param  mode2 [second function mode]
+ * @return       [position]
+ */
+int addRemCon(GH* head, int size, int mode1, int mode2)
+{
+	int pos;	// position
+	char *mes;	// message
+
+    mes = (mode2) ? "before": "after";
+
+	if(!size)
+	{
+		pos = 1;
+		printf("This will be the first game in the file cabinet");
+		pause();
+	}
+
+	if(size == 1)
+	{
+		pos = 1;
+		printf("There is only one game in the file cabinets.\n");
+		if(!mode1)
+			printf("The current one will be added %s it.", mes);
+		else
+			printf("It will be deleted.");
+		pause();
+	}
+
+    if(size == 2 && mode1)
+    {
+        printf("There is only two game in the file cabinets.\n");
+        pos = (!mode2) ? 1: 2;
+        printf("The current one will be removed %s %d", mes, pos);
+        pause();
+    }
+
+	if((size > 1 && !mode2) || size > 2)
+        pos = getPos(head);
+
+	return pos;
+}
+
+/*-------------------functions for forming list's element--------------------*/
+
+/*
+ * [makeNode element of list creation]
+ * @param  error [pointer to error marker]
+ * @return       [element of list creation]
  */
 GN* makeNode(int *error)
 {
@@ -1380,8 +1476,8 @@ GN* makeNode(int *error)
 
 /*
  * [gameInput entering game fields]
- * @param  all_head [pointers to all available lists]
- * @return          [game for list]
+ * @param  error [pointer to error marker]
+ * @return       [game for list]
  */
 GN* gameInput(int *error)
 {
@@ -1411,18 +1507,19 @@ GN* gameInput(int *error)
 
 /*
  * [gameName entering game name]
- * @param  game     [pointer to game]
- * @param  all_head [pointers to all available lists]
- * @return          [game name]
+ * @param  game  [pointer to pointer to game]
+ * @param  made  [function mode]
+ * @param  error [pointer to error marker]
+ * @return       [game name]
  */
 char* gameName(GN **game, int mode, int *error)
 {
 	char
-	*mes,
+	*mes,		// message
 	*name;		// game name
 
 	int
-	flag,
+	flag,		// sign of invalid character
 	len;		// string length
 
 	if(mode)
@@ -1479,18 +1576,19 @@ char* gameName(GN **game, int mode, int *error)
 
 /*
  * [gameName entering game developer]
- * @param  game     [pointer to game]
- * @param  all_head [pointers to all available lists]
+ * @param  game  [pointer to pointer to game]
+ * @param  made  [function mode]
+ * @param  error [pointer to error marker]
  * @return          [game developer]
  */
 char* gameDev(GN **game, int mode, int *error)
 {
 	char
-	*mes,
+	*mes,	// message
 	*dev;	// game developer
 
 	int
-	flag,
+	flag,	// sign of invalid character
 	len;	// string length
 
 	if(mode)
@@ -1546,7 +1644,9 @@ char* gameDev(GN **game, int mode, int *error)
 
 /*
  * [gameDate game date formation]
- * @return [game release date]
+ * @param  min  [minmum date value]
+ * @param  mode [function mode]
+ * @return      [game release date]
  */
 int gameDate(int min, int mode)
 {
@@ -1608,16 +1708,18 @@ int gameDate(int min, int mode)
 
 /*
  * [gamePrice game price formation]
+ * @param  min  [minmum price value]
+ * @param  mode [function mode]
  * @return [game price]
  */
 int gamePrice(int min, int mode)
 {
 	int
-	price,			// game price
-	len;			// real length of text
+	price,	// game price
+	len;	// real length of text
 
 	char
-	*mes,
+	*mes,	// message
 	str[7];	// temporary string
 
 	if(mode)
@@ -1666,6 +1768,8 @@ int gamePrice(int min, int mode)
 
 /*
  * [gameRating game rating formation]
+ * @param  min  [minmum rating value]
+ * @param  mode [function mode]
  * @return [game rating]
  */
 int gameRating(int min, int mode)
@@ -1675,7 +1779,7 @@ int gameRating(int min, int mode)
 	len;	// real length of text
 
 	char
-	*mes,
+	*mes,	// message
 	str[4];	// temporary string
 
 	if(mode)
@@ -1721,6 +1825,52 @@ int gameRating(int min, int mode)
 }
 
 /*
+ * [gameChange change game info]
+ * @param head  [lest head]
+ * @param field [field that need change]
+ * @param pos   [position of game]
+ * @param error [pointer to error marker]
+ */
+void gameChange(GH *head, char *field, int pos, int *error)
+{
+	int i;		// loop parametr
+	GN *game;	// changed game
+
+	game = head->first;
+	for(i = 0; i < pos - 1; i++)
+		game = game->next;
+
+	for(i = 0; i < strLen(field) + 1 && !(*error); i++)
+	{
+		if(field[i] == '1')
+		{
+			free(game->name);
+			game->name = NULL;
+			game->name = gameName(NULL, 0, error);
+		}
+
+		if(field[i] == '2')
+		{
+			free(game->dev);
+			game->dev = NULL;
+			game->dev = gameDev(NULL, 0, error);
+		}
+
+		if(field[i] == '3')
+			game->date = gameDate(1940, 0);
+
+		if(field[i] == '4')
+			game->price = gamePrice(0, 0);
+
+		if(field[i] == '5')
+			game->rating = gameRating(1, 0);
+	}
+}
+
+
+/*-----------------------functions for work with list------------------------*/
+
+/*
  * [getSize getting list size]
  * @param  head [head of list]
  * @return      [list size]
@@ -1729,27 +1879,24 @@ int getSize(GH *head)
 {
 	GN* game;	// another game in list
 	int size;	// list size
-
 	if(head)
 		game = head->first;
 	else
 		game = NULL;
-
 	size = 0;
 	while (game)
 	{
 		game = game->next;
 		size++;
 	}
-
 	return size;
 }
 
 /*
  * [listCopy copy list]
- * @param  head     [source head pointer]
- * @param  all_head [pointers to all available lists]
- * @return          [copied of source list]
+ * @param  head  [source head pointer]
+ * @param  error [pointer to error marker]
+ * @return       [copied of source list]
  */
 GH* listCopy(GH *head, int *error)
 {
@@ -1798,9 +1945,9 @@ GH* listCopy(GH *head, int *error)
 
 /*
  * [gameCopy copy game]
- * @param  orig     [original game]
- * @param  all_head [pointers to all available lists]
- * @return          [copied game]
+ * @param  orig  [original game]
+ * @param  error [pointer to error marker]
+ * @return       [copied game]
  */
 GN* gameCopy(GN *orig, int *error)
 {
@@ -1853,10 +2000,10 @@ GN* gameCopy(GN *orig, int *error)
 
 /*
  * [sort sorting source list]
- * @param  head  [source head pointer]
- * @param  all_head [pointers to all available lists]
- * @param  cmp   [pointer to function call point]
- * @return       [source list]
+ * @param  head [source head]
+ * @param  cmp  [pointer to function call point]
+ * @param  sdir [sorting direction]
+ * @return      [sorted list]
  */
 void sort(GH *head, int (*cmp)(GN*, GN*), int sdir)
 {
@@ -1911,10 +2058,11 @@ void sort(GH *head, int (*cmp)(GN*, GN*), int sdir)
 
 /*
  * [filter filtering source list]
- * @param  head  [source head pointer]
- * @param  all_head [pointers to all available lists]
- * @param  cmp   [pointer to the first element in an array of function pointers]
- * @return       [copied game]
+ * @param  param  [parametrs for sorting]
+ * @param  head   [source head pointer]
+ * @param  ffield [game fields to be filteredr]
+ * @param  cmp    [pointer to the first element in an array of function pointers]
+ * @return        [filtered list]
  */
 void filter(GH *param, GH **head, char *ffield, int (**cmp)(GN*, GN*))
 {
@@ -1961,6 +2109,337 @@ void filter(GH *param, GH **head, char *ffield, int (**cmp)(GN*, GN*))
 			freeHead(head);
 		i++;
 	}
+}
+
+/*
+ * [paramMake create parametrs for filter]
+ * @param  ffield [fields that need filtering]
+ * @param  error  [pointer to errror marker]
+ * @return        [parametrs]
+ */
+GH* paramMake(char *ffield, int *error)
+{
+	GH* param;	// parametrs
+	int len;	// length of string
+
+	len = strLen(ffield);
+
+	param = makeHead(error);
+	if(!(*error))
+	{
+		param->first = makeNode(error);
+		if(!(*error))
+		{
+			param->last = makeNode(error);
+			(param->first)->next = param->last;
+			if(!(*error))
+			{
+				if(findSym(ffield, '1', 0, len))
+				{
+					(param->first)->name = gameName(&(param->first), 1, error);
+					(param->last)->name = (param->first)->name;
+				}
+
+				// parametrs developer formation
+				if(findSym(ffield, '2', 0, len))
+				{
+					(param->first)->dev = gameDev(&(param->first), 1, error);
+					(param->last)->dev = (param->first)->dev;
+				}
+
+				// parametrs date formation
+				if(findSym(ffield, '3', 0, len))
+				{
+					(param->first)->date = gameDate(1940, 1);
+					if((param->first)->date != 2020)
+						(param->last)->date = gameDate((param->first)->date, 1);
+					else
+						(param->last)->date = 2020;
+				}
+				else
+				{
+					(param->first)->date = -1;
+					(param->last)->date = -1;
+				}
+
+				// parametrs price formation
+				if(findSym(ffield, '4', 0, len))
+				{
+					(param->first)->price = gamePrice(0, 1);
+					if((param->first)->price != 20000)
+						(param->last)->price = gamePrice((param->first)->price, 1);
+					else
+						(param->last)->price = 20000;
+				}
+				else
+				{
+					(param->first)->price = -1;
+					(param->last)->price = -1;
+				}
+
+				// parametrs rating formation
+				if(findSym(ffield, '5', 0, len))
+				{
+					(param->first)->rating = gameRating(1, 1);
+					if((param->first)->rating != 10)
+						(param->last)->rating = gamePrice((param->first)->rating, 1);
+					else
+						(param->last)->rating = 10;
+				}
+				else
+				{
+					(param->first)->rating = -1;
+					(param->last)->rating = -1;
+				}
+			}
+			else
+				errorMes();
+		}
+		else
+			errorMes();
+	}
+	else
+		errorMes();
+
+	return param;
+}
+
+/*
+ * [sortFieldSelect field selection for sorting]
+ * @return [user choice]
+ */
+int sortFieldSelect()
+{
+	char choice; // user's choice
+
+	// do while there is no correct input
+	do
+	{
+		system("cls");
+
+		// print options for choosing
+		printf("Choose one of the items:\n\n"
+			"\t1 - Sort by name\n"
+			"\t2 - Sort by developer\n"
+			"\t3 - Sort by game release date\n"
+			"\t4 - Sort by price of game\n"
+			"\t5 - Sort by rating of game\n\n");
+		printf("Input: ");
+
+		// user make choice
+		choice = getChoice();
+
+		// output if invalid input
+		if(choice < '1' || choice > '5')
+			incMes();
+	}
+	while (choice < '1' || choice > '5');
+
+	return (int)(choice - 49);
+}
+
+/*
+ * [sortDirSelect selection of direction for sorting]
+ * @return [user choice]
+ */
+int sortDirSelect()
+{
+	char choice; // user's choice
+
+	// do while there is no correct input
+	do
+	{
+		system("cls");
+
+		// print menu
+		printf("Note: The characters in the original order (from smallest to largest)\n"
+			"are arranged according to the order in the ASCII table.\n\n"
+			"Choose one of the items:\n\n"
+			"\t1 - Sort the list in ascending order\n"
+			"\t2 - Sort the list in descending order\n\n"
+			"Input: ");
+
+		// user make choice
+		choice = getChoice();
+
+		// output if invalid input
+		if(choice < '1' || choice > '2')
+			incMes();
+	}
+	while (choice < '1' || choice > '2');
+
+	return (int)(choice - 49);
+}
+
+/*------------------------information output functions-----------------------*/
+
+/*
+ * [gamePrint print game from list]
+ * @param head [list head]
+ * @param pos  [position]
+ */
+void gamePrint(GH* head, int pos)
+{
+    GN *game;   // game in list
+    int i;      // loop parametr
+
+    game = head->first;
+
+    for(i = 0; i < pos - 1; i++)
+        game = game->next;
+
+    printf("Information on the game in %d position:\n\n"
+        "<Name>         %s\n<Developer>    %s\n<Date>         %d\n"
+        "<Price>        %d\n<Rating>       %d",
+        pos, game->name, game->dev, game->date, game->price, game->rating);
+    pause();
+}
+
+/*
+ * [sortParamPrint output sort parametr]
+ * @param sfield [field for sort]
+ * @param sdir   [direction for sort]
+ */
+void sortParamPrint(int sfield, int sdir)
+{
+	system("cls");
+	printf("Selected options for sorting the list\n\n"
+		"<Field>        ");
+
+	switch (sfield)
+	{
+		case 0:
+			printf("Name");
+			break;
+		case 1:
+			printf("Developer");
+			break;
+		case 2:
+			printf("Date");
+			break;
+		case 3:
+			printf("Price");
+			break;
+		case 4:
+			printf("Rating");
+			break;
+		default:
+			printf("!nothing!");
+	}
+
+	printf("\n\n<Direction>    ");
+
+	switch (sdir)
+	{
+		case 0:
+			printf("Ascending");
+			break;
+		case 1:
+			printf("Descending");
+			break;
+		default:
+			printf("!nothing!");
+	}
+	pause();
+}
+
+/*
+ * [listPrint output list]
+ * @param head [head of some list]
+ */
+void listPrint(GH* head)
+{
+	GN* game;	// game in list
+
+	int
+	size,		// size pf list
+	i;			// loop parametr
+
+	game = head->first;
+	size = getSize(head);
+	system("cls");
+
+	//some information for user
+	if(size > 8)
+		puts("\t\t     To output the next group of\n"
+			"\t\t games from the sequence, press any key\n");
+
+	printf("  Total games are listed: %d\n", size);
+
+	//header
+	puts("  +---+----------------------+------------"
+		"----------+------+-------+--------+\n"
+		"  | N |                 Name |            Developer "
+		"| Date | Price | Rating |\n"
+		"  +---+----------------------+------------"
+		"----------+------+-------+--------+");
+
+	//main information
+	for (i = 0; i < size; i++)
+	{
+		printf("  |%2.d | %20s | %20s | %d | %5.1d |   %2.d   |\n"
+			"  +---+----------------------+------------"
+			"----------+------+-------+--------+\n",
+			i + 1, game->name,
+			game->dev, game->date,
+			game->price, game->rating);
+
+		if ((i + 1) % 8 == 0 && size > 8)
+			getch();
+
+		game = game->next;
+	}
+	pause();
+}
+
+/*
+ * [filtParamPrint print filter parametrs]
+ * @param param [filter parametrs]
+ */
+void filtParamPrint(GH* param)
+{
+	printf("Selected options for filtering\n"
+		   "the list and their values:\n\n");
+
+	if((param->first)->name)
+		printf("<Name>         %s\n", (param->first)->name);
+
+	if((param->first)->dev)
+		printf("<Developer>    %s\n", (param->first)->dev);
+
+	if((param->first)->date != -1)
+    {
+		if((param->first)->date != (param->last)->date)
+			printf("<Min date>     %d\n"
+				   "<Max date>     %d\n",
+				   (param->first)->date, (param->last)->date);
+		else
+			printf("<Date>         %d\n",
+				   (param->first)->date);
+    }
+
+	if((param->first)->price != -1)
+    {
+		if((param->first)->price != (param->last)->price)
+			printf("<Min price>    %d\n"
+				   "<Max price>    %d\n",
+				   (param->first)->price, (param->last)->price);
+		else
+			printf("<Price>        %d\n",
+				   (param->first)->price);
+    }
+
+	if((param->first)->rating != -1)
+    {
+		if((param->first)->rating != (param->last)->rating)
+			printf("<Min rating>   %d"
+				   "<Max rating>   %d",
+				   (param->first)->rating, (param->last)->rating);
+		else
+			printf("<Rating>       %d",
+				   (param->first)->rating);
+    }
+    pause();
 }
 
 /*---------------------------comparison functions----------------------------*/
@@ -2076,55 +2555,6 @@ int cmpDev(GN* game1, GN* game2)
 	return res;
 }
 
-/*
- * [listPrint output list]
- * @param head [head of some list]
- */
-void listPrint(GH* head)
-{
-	GN* game;	// game in list
-
-	int
-	size,		// size pf list
-	i;			// loop parametr
-
-	game = head->first;
-	size = getSize(head);
-	system("cls");
-
-	//some information for user
-	if(size > 8)
-		puts("\t\t     To output the next group of\n"
-			"\t\t games from the sequence, press any key\n");
-
-	printf("  Total games are listed: %d\n", size);
-
-	//header
-	puts("  +---+----------------------+------------"
-		"----------+------+-------+--------+\n"
-		"  | N |                 Name |            Developer "
-		"| Date | Price | Rating |\n"
-		"  +---+----------------------+------------"
-		"----------+------+-------+--------+");
-
-	//main information
-	for (i = 0; i < size; i++)
-	{
-		printf("  |%2.d | %20s | %20s | %d | %5.1d |   %2.d   |\n"
-			"  +---+----------------------+------------"
-			"----------+------+-------+--------+\n",
-			i + 1, game->name,
-			game->dev, game->date,
-			game->price, game->rating);
-
-		if ((i + 1) % 8 == 0 && size > 8)
-			getch();
-
-		game = game->next;
-	}
-	pause();
-}
-
 /*----------------------functions for work with strings----------------------*/
 
 /*
@@ -2147,6 +2577,7 @@ int strLen(char *str)
  * [findSym searching symbol in string]
  * @param  str [string]
  * @param  sym [symbol]
+ * @param  pos [star position]
  * @param  len [kength]
  * @return     [result of searching]
  */
@@ -2245,27 +2676,13 @@ int strCmp(char* str1, char* str2)
 	return res;
 }
 
-/*
- * [errorMes print error massage]
- */
-void errorMes()
-{
-	system("cls");
-	printf("Memory allocation error! The program ends its work");
-	pause();
-}
+/*-------------------------functions to free memory--------------------------*/
 
 /*
- * [pause pause program]
+ * [freeGame delete game]
+ * @param game [deleted game]
  */
-void pause()
-{
-	printf("\n\nTo continue, press any key ...");
-	getch();
-}
-
-
-void freeGame(GN** game)
+void freeGame(GN **game)
 {
 	if(*game)
 	{
@@ -2285,8 +2702,11 @@ void freeGame(GN** game)
 	}
 }
 
-
-void freeHead(GH** head)
+/*
+ * [freeHead delete list]
+ * @param head [deleted list]
+ */
+void freeHead(GH **head)
 {
 	GN
 	*game,
@@ -2308,8 +2728,14 @@ void freeHead(GH** head)
 	}
 }
 
-
-void delAll(GH** head, GH** param, GH** oth)
+/*
+ * [delAll delete all data]
+ * @param head  [source list]
+ * @param param [param for filter]
+ * @param oth   [help list]
+ * @param fname [file name]
+ */
+void delAll(GH **head, GH **param, GH **oth, char **fname)
 {
 	if (*head)
         freeHead(head);
@@ -2317,25 +2743,51 @@ void delAll(GH** head, GH** param, GH** oth)
         freeHead(param);
     if (*oth)
         freeHead(oth);
+    if (*fname)
+    {
+    	free(*fname);
+    	fname = NULL;
+    }
 }
 
+/*
+ * [errorCheck checking for memory allocation error]
+ * @param error [error marker]
+ * @param head  [pointer to list head]
+ * @param param [pointer to parametr for filter]
+ * @param oth   [pointer to other list head]
+ * @param fname [file name]
+ */
+void errorCheck(int error, GH **head, GH **param, GH **oth, char **fname)
+{
+	if(error)
+	{
+		delAll(head, param, oth, fname);
+		exit(-1);
+	}
+}
+
+/*------------------------functions for work with file-----------------------*/
+
+/*
+ * [saveFile output file-cabinet in file]
+ * @param head  [list head]
+ * @param fname [file name]
+ */
 void saveFile(GH *head, char *fname)
 {
     FILE
-    *file;
+    *file;		// file
 
-    GN *game;
+    GN *game;	// ordinary game in list
 
     char
-    choice,
-    str[7];
+    choice,		// user choice
+    str[7];		// temporary string
 
-    int
-    flag,
-    amt;
+    int amt;	// number of bytes in file
 
     amt = 0;
-    flag = 1;
 
     file = fopen(fname, "r");
     if (file != NULL)
@@ -2352,7 +2804,7 @@ void saveFile(GH *head, char *fname)
     	system("cls");
     	do
 		{
-			printf("The file already contains some information. "
+			printf("The file already contains some information.\n"
     		       "Having saved the current card file in it,\n"
     		       "the information contained in it will be lost. "
     		       "Continue? (0 - no, 1 - yes)\n\nInput: ");
@@ -2364,12 +2816,11 @@ void saveFile(GH *head, char *fname)
 			}
 		}
 		while(choice != '0' && choice != '1');
-
-		if(choice == '0')
-			flag = 0;
     }
+    else
+        choice = '1';
 
-    if(flag)
+    if(choice == '1')
     {
 	    if ((file = fopen(fname, "w")) != NULL)
 	    {
@@ -2409,24 +2860,28 @@ void saveFile(GH *head, char *fname)
 	}
 }
 
+/*
+ * [readFile description]
+ * @param  fname [file name]
+ * @param  error [pointer to error marker]
+ * @return       [list from file]
+ */
 GH* readFile(char *fname, int *error)
 {
-	FILE *file;
-
-    GH *head;
-
-    GN *game;
+	FILE *file;	// file
+    GH *head;	// list head
+    GN *game;	// ordinary game in list
 
     int
-    i,
-    flag,
-    cnt,
-    row,
-    amt;
+    i,			// loop parametr
+    flag,		// error in file marker
+    cnt,		// number of symbols
+    row,		// number of roes
+    amt;		// number of bytes in file
 
     char
-    sym,
-    str[22];
+    sym,		// symbol from file
+    str[22];	// temporary string
 
     head = NULL;
     amt = 0;
@@ -2716,21 +3171,20 @@ GH* readFile(char *fname, int *error)
 	return head;
 }
 
-void cntMes(int row)
-{
-	system("cls");
-	printf("Error on line %d. There is not enough data in the file", row);
-	pause();
-}
-
-
+/*
+ * [fileName description]
+ * @param  error [pointer to error marker]
+ * @return       [file name]
+ */
 char* fileName(int *error)
 {
 	int
-	len,
-	flag;
+	i,			// loop parametr
+	len,		// length of name
+	def, 		// try use defolt name
+	flag;		// error in file name marker
 
-	char* fname;
+	char* fname;// file name
 
 	fname = (char*)malloc((MAX_PATH + 1) * sizeof(char));
 	if(fname)
@@ -2802,6 +3256,35 @@ char* fileName(int *error)
 										errorMes();
 									}
 				}
+
+			if(!flag && fname)
+			{
+				def = 1;
+				for(i = 1; i <= 9 && def; i++)
+					if(fname[len - i] != DEF_READ_FILE[9 - i])
+						def = 0;
+				if(len > 10)
+					if(def && fname[len - i] != '\\')
+						def = 0;
+
+				if(!def)
+				{
+					def = 1;
+					for(i = 1; i <= 10 && def; i++)
+						if(fname[len - i] != DEF_WRITE_FILE[10 - i])
+							def = 0;
+					if(len > 11)
+						if(def && fname[len - i] != '\\')
+							def = 0;
+				}
+
+				if(def)
+				{
+					flag = 1;
+					system("cls");
+					printf("You can use default file. Try again!\n\n");
+				}
+			}
 		}
 		while(flag);
 	}
@@ -2814,12 +3297,18 @@ char* fileName(int *error)
 	return fname;
 }
 
+/*
+ * [parser parsing file name]
+ * @param  str [string (file name)]
+ * @param  len [string length]
+ * @return     [result of parsing]
+ */
 int parser(char* str, int len)
 {
 	int
-	i,
-	flag,
-	res;
+	i,		// loop parametr
+	flag,	// error in name marker
+	res;	// result of parsing
 
 	flag = 0;
 	res = 1;
@@ -2868,15 +3357,17 @@ int parser(char* str, int len)
 	return res;
 }
 
-int needSave(GH *head, int *error)
+/*
+ * [needSave description]
+ * @param  head  [list head]
+ * @param  error [pointer to error marker]
+ */
+void needSave(GH *head, int *error)
 {
 	char
-	*fname,
-	choice;
-
-	int flag;
-
-	flag = 0;
+	*fname,		// file name
+	fchoice,	// user file choice
+	choice;		// user choice
 
 	system("cls");
 	do
@@ -2891,78 +3382,164 @@ int needSave(GH *head, int *error)
 			system("cls");
 			printf("Incorrect command. Try again!\n\n");
 		}
+
+		if(choice == '\n')
+			system("cls");
 	}
 	while(choice != '0' && choice != '1');
 
+	system("cls");
 	if(choice == '1')
 	{
-		fname = fileName(error);
-		if(fname && !(*error))
-        {
-			saveFile(head, fname);
-			if(head)
-				flag = 1;
-			free(fname);
-			fname = NULL;
+		do
+		{
+			printf("Where do you want to save file?\n"
+				   "(0 - default file, 1 - your own file)\n\n"
+				   "Input: ");
+			fchoice = getChoice();
+			if(fchoice != '0' && fchoice!= '1' && fchoice != '\n')
+			{
+				system("cls");
+				printf("Incorrect command. Try again!\n\n");
+			}
+
+			if(fchoice == '\n')
+				system("cls");
+		}
+		while(fchoice != '0' && fchoice != '1');
+
+		if(fchoice == '0')
+		{
+			saveFile(head, DEF_WRITE_FILE);
 		}
 		else
 		{
-			system("cls");
-			printf("File-cabinet didn't saved!\n");
-			pause();
+			fname = fileName(error);
+			if(fname && !(*error))
+	        {
+				saveFile(head, fname);
+				free(fname);
+				fname = NULL;
+			}
+			else
+			{
+				system("cls");
+				printf("File-cabinet didn't saved!\n");
+				pause();
+			}
 		}
 	}
-
-	return flag;
 }
 
-void errorCheck(int error, GH **head, GH **param, GH **oth, char **fname)
+/*---------------------------------messages----------------------------------*/
+
+/*
+ * [errorMes print error massage]
+ */
+void errorMes()
 {
-	if(error)
-	{
-		delAll(head, param, oth);
-		if(*fname)
-            free(*fname);
-		exit(-1);
-	}
+	system("cls");
+	printf("Memory allocation error! The program ends its work");
+	pause();
 }
 
-void gameChange(GH *head, char *field, int pos, int *error)
+/*
+ * [emptyMes print file-cabinet empty message]
+ */
+void emptyMes()
 {
-	int i;
-	GN *game;
-
-	game = head->first;
-	for(i = 0; i < pos - 1; i++)
-		game = game->next;
-
-	for(i = 0; i < strLen(field) + 1 && !(*error); i++)
-	{
-		if(field[i] == '1')
-		{
-			free(game->name);
-			game->name = NULL;
-			game->name = gameName(NULL, 0, error);
-		}
-
-		if(field[i] == '2')
-		{
-			free(game->dev);
-			game->dev = NULL;
-			game->dev = gameDev(NULL, 0, error);
-		}
-
-		if(field[i] == '3')
-			game->date = gameDate(1940, 0);
-
-		if(field[i] == '4')
-			game->price = gamePrice(0, 0);
-
-		if(field[i] == '5')
-			game->rating = gameRating(1, 0);
-	}
+	system("cls");
+	printf("There are no games in the file-cabinet!");
+	pause();
 }
 
+/*
+ * [emptyMes print incorrect comand message]
+ */
+void incMes()
+{
+	system("cls");
+	printf("Incorrect command!");
+    pause();
+}
+
+/*
+ * [cntMes file error message]
+ * @param row [roe in file]
+ */
+void cntMes(int row)
+{
+	system("cls");
+	printf("Error on line %d. There is not enough data in the file", row);
+	pause();
+}
+
+/*
+ * [succMes print message about succesfull]
+ */
+void succMes()
+{
+	system("cls");
+	printf("Successfully!");
+	pause();
+}
+
+/*-----------------------------------other-----------------------------------*/
+
+/*
+ * [getPos user choice about position in list]
+ * @param  head [list head]
+ * @return      [position]
+ */
+int getPos(GH* head)
+{
+	int
+	size,		// list size
+	pos,		// position
+	len;		// real length of text
+
+	char
+	str[11];	// temporary string
+
+	size = getSize(head);
+
+	system("cls");
+	do
+	{
+		printf("Elements in list: %d\n\n"
+               "Enter position of game in list"
+               "(minimum value - 1, maximum value - %d)"
+               "\n\nInput: ", size, size);
+		fgets(str, 11, stdin);
+		fflush(stdin);
+		len = strLen(str);
+
+		// conrol of position
+		system("cls");
+		if (len)
+		{
+			pos = fromStrToNum(str, len+ 1);
+			if (pos == -1)
+				printf("Invalid input. Try again!\n");
+			else
+				if (pos < 1)
+					printf("It is impossible! Minimum value - 1. Try again!\n");
+				else
+					if(pos > size)
+						printf("It is impossible! Maximum value value - %d. Try again!\n", size);
+		}
+		else
+			pos = 0;
+	} while (pos < 1 || pos > size);
+
+	return pos;
+}
+
+/*
+ * [fieldChoice description]
+ * @param field [fields for something]
+ * @param mode  [function mode]
+ */
 void fieldChoice(char* field, int mode)
 {
 	int
@@ -3027,374 +3604,11 @@ void fieldChoice(char* field, int mode)
 	while(!flag);
 }
 
-int getPos(GH* head)
-{
-	int
-	size,
-	pos,		// position
-	len;		// real length of text
-
-	char
-	str[11];	// temporary string
-
-	size = getSize(head);
-
-	system("cls");
-	do
-	{
-		printf("Elements in list: %d\n\n"
-               "Enter position of game in list"
-               "(minimum value - 1, maximum value - %d)"
-               "\n\nInput: ", size, size);
-		fgets(str, 11, stdin);
-		fflush(stdin);
-		len = strLen(str);
-
-		// conrol of position
-		system("cls");
-		if (len)
-		{
-			pos = fromStrToNum(str, len+ 1);
-			if (pos == -1)
-				printf("Invalid input. Try again!\n");
-			else
-				if (pos < 1)
-					printf("It is impossible! Minimum value - 1. Try again!\n");
-				else
-					if(pos > size)
-						printf("It is impossible! Maximum value value - %d. Try again!\n", size);
-		}
-		else
-			pos = 0;
-	} while (pos < 1 || pos > size);
-
-	return pos;
-}
-
-void emptyMes()
-{
-	system("cls");
-	printf("There are no games in the file-cabinet!");
-	pause();
-}
-
-void incMes()
-{
-	system("cls");
-	printf("Incorrect command!");
-    pause();
-}
-
-void gamePrint(GH* head, int pos)
-{
-    GN *game;   // game in list
-    int i;      // loop parametr
-
-    game = head->first;
-
-    for(i = 0; i < pos - 1; i++)
-        game = game->next;
-
-    printf("Information on the game in %d position:\n\n"
-        "<Name>         %s\n<Developer>    %s\n<Date>         %d\n"
-        "<Price>        %d\n<Rating>       %d",
-        pos, game->name, game->dev, game->date, game->price, game->rating);
-    pause();
-}
-
 /*
- * [sortFieldSelect field selection for sorting]
- * @return [user's choice]
+ * [pause pause program]
  */
-int sortFieldSelect()
+void pause()
 {
-	char choice; // user's choice
-
-	// do while there is no correct input
-	do
-	{
-		system("cls");
-
-		// print options for choosing
-		printf("Choose one of the items:\n\n"
-			"\t1 - Sort by name\n"
-			"\t2 - Sort by developer\n"
-			"\t3 - Sort by game release date\n"
-			"\t4 - Sort by price of game\n"
-			"\t5 - Sort by rating of game\n\n");
-		printf("Input: ");
-
-		// user make choice
-		choice = getChoice();
-
-		// output if invalid input
-		if(choice < '1' || choice > '5')
-			incMes();
-	}
-	while (choice < '1' || choice > '5');
-
-	return (int)(choice - 49);
-}
-
-/*
- * [sortDirSelect selection of direction for sorting]
- * @return [user's choice]
- */
-int sortDirSelect()
-{
-	char choice; // user's choice
-
-	// do while there is no correct input
-	do
-	{
-		system("cls");
-
-		// print menu
-		printf("Note: The characters in the original order (from smallest to largest)\n"
-			"are arranged according to the order in the ASCII table.\n\n"
-			"Choose one of the items:\n\n"
-			"\t1 - Sort the list in ascending order\n"
-			"\t2 - Sort the list in descending order\n\n"
-			"Input: ");
-
-		// user make choice
-		choice = getChoice();
-
-		// output if invalid input
-		if(choice < '1' || choice > '2')
-			incMes();
-	}
-	while (choice < '1' || choice > '2');
-
-	return (int)(choice - 49);
-}
-
-
-/*
- * [sortParamPrint output sort parametr]
- * @param sfield [field for sort]
- * @param sdir   [direction for sort]
- */
-void sortParamPrint(int sfield, int sdir)
-{
-	system("cls");
-	printf("Selected options for sorting the list\n\n"
-		"<Field>        ");
-
-	switch (sfield)
-	{
-		case 0:
-			printf("Name");
-			break;
-		case 1:
-			printf("Developer");
-			break;
-		case 2:
-			printf("Date");
-			break;
-		case 3:
-			printf("Price");
-			break;
-		case 4:
-			printf("Rating");
-			break;
-		default:
-			printf("!nothing!");
-	}
-
-	printf("\n\n<Direction>    ");
-
-	switch (sdir)
-	{
-		case 0:
-			printf("Ascending");
-			break;
-		case 1:
-			printf("Descending");
-			break;
-		default:
-			printf("!nothing!");
-	}
-
-	pause();
-
-}
-
-GH* paramMake(char *ffield, int *error)
-{
-	GH* param;
-	int len;
-
-	len = strLen(ffield);
-
-	param = makeHead(error);
-	if(!(*error))
-	{
-		param->first = makeNode(error);
-		if(!(*error))
-		{
-			param->last = makeNode(error);
-			(param->first)->next = param->last;
-			if(!(*error))
-			{
-				if(findSym(ffield, '1', 0, len))
-				{
-					(param->first)->name = gameName(&(param->first), 1, error);
-					(param->last)->name = (param->first)->name;
-				}
-
-				// parametrs developer formation
-				if(findSym(ffield, '2', 0, len))
-				{
-					(param->first)->dev = gameDev(&(param->first), 1, error);
-					(param->last)->dev = (param->first)->dev;
-				}
-
-				// parametrs date formation
-				if(findSym(ffield, '3', 0, len))
-				{
-					(param->first)->date = gameDate(1940, 1);
-					if((param->first)->date != 2020)
-						(param->last)->date = gameDate((param->first)->date, 1);
-					else
-						(param->last)->date = 2020;
-				}
-				else
-				{
-					(param->first)->date = -1;
-					(param->last)->date = -1;
-				}
-
-				// parametrs price formation
-				if(findSym(ffield, '4', 0, len))
-				{
-					(param->first)->price = gamePrice(0, 1);
-					if((param->first)->price != 20000)
-						(param->last)->price = gamePrice((param->first)->price, 1);
-					else
-						(param->last)->price = 20000;
-				}
-				else
-				{
-					(param->first)->price = -1;
-					(param->last)->price = -1;
-				}
-
-				// parametrs rating formation
-				if(findSym(ffield, '5', 0, len))
-				{
-					(param->first)->rating = gameRating(1, 1);
-					if((param->first)->rating != 10)
-						(param->last)->rating = gamePrice((param->first)->rating, 1);
-					else
-						(param->last)->rating = 10;
-				}
-				else
-				{
-					(param->first)->rating = -1;
-					(param->last)->rating = -1;
-				}
-			}
-			else
-				errorMes();
-		}
-		else
-			errorMes();
-	}
-	else
-		errorMes();
-
-	return param;
-}
-
-void filtParamPrint(GH* param)
-{
-	printf("Selected options for filtering\n"
-		   "the list and their values:\n\n");
-
-	if((param->first)->name)
-		printf("<Name>         %s\n", (param->first)->name);
-
-	if((param->first)->dev)
-		printf("<Developer>    %s\n", (param->first)->dev);
-
-	if((param->first)->date != -1)
-    {
-		if((param->first)->date != (param->last)->date)
-			printf("<Min date>     %d\n"
-				   "<Max date>     %d\n",
-				   (param->first)->date, (param->last)->date);
-		else
-			printf("<Date>         %d\n",
-				   (param->first)->date);
-    }
-
-	if((param->first)->price != -1)
-    {
-		if((param->first)->price != (param->last)->price)
-			printf("<Min price>    %d\n"
-				   "<Max price>    %d\n",
-				   (param->first)->price, (param->last)->price);
-		else
-			printf("<Price>        %d\n",
-				   (param->first)->price);
-    }
-
-	if((param->first)->rating != -1)
-    {
-		if((param->first)->rating != (param->last)->rating)
-			printf("<Min rating>   %d"
-				   "<Max rating>   %d",
-				   (param->first)->rating, (param->last)->rating);
-		else
-			printf("<Rating>       %d",
-				   (param->first)->rating);
-    }
-    pause();
-}
-
-int addRemCon(GH* head, int size, int mode1, int mode2)
-{
-	int pos;
-	char *mes;
-
-    mes = (mode2) ? "before": "after";
-
-	if(!size)
-	{
-		pos = 1;
-		printf("This will be the first game in the file cabinet");
-		pause();
-	}
-
-	if(size == 1)
-	{
-		pos = 1;
-		printf("There is only one game in the file cabinets.\n");
-		if(!mode1)
-			printf("The current one will be added %s it.", mes);
-		else
-			printf("It will be deleted.");
-		pause();
-	}
-
-    if(size == 2 && mode1)
-    {
-        printf("There is only two game in the file cabinets.\n");
-        pos = (!mode2) ? 1: 2;
-        printf("The current one will be removed %s %d", mes, pos);
-        pause();
-    }
-
-	if((size > 1 && !mode2) || size > 2)
-        pos = getPos(head);
-
-	return pos;
-}
-
-void succMes()
-{
-	system("cls");
-	printf("Successfully!");
-	pause();
+	printf("\n\nTo continue, press any key ...");
+	getch();
 }
