@@ -22,7 +22,7 @@ void sort(NODE *top)
 		p_item = NULL;
 		for (j = 0; j < size - i - 1; j++)
 		{
-			if ((cmp(item, item->next) % 2) ^ sdir)
+			if (cmp(item, item->next) % 2)
 			{
 				// swap extreme elements
 				tmp = item->next;
